@@ -1,16 +1,18 @@
 // ==UserScript==
-// @name        Wanikani Review Pro
+// @name        Wanikani Review SRS Indicator
 // @namespace   mempo
 // @author      Mempo
-// @description An enhancement to reviews
+// @description Show current SRS level and how many are left before levelling up
 // @run-at      document-end
 // @include     https://www.wanikani.com/review/session*
 // @include     http://www.wanikani.com/review/session*
-// @version     1
+// @version     1.1.2
 // @grant       none
 // ==/UserScript==
 
 console.log('start of Wanikani Review Pro');
+
+var doIUseDoubleCheckScript = false;
 
 var css = 
     '#additional-content ul li {' +
@@ -57,6 +59,11 @@ var css =
     '    background-color: #434343;' +
     '} ';
 
+var cssForDoubleCheckScript = 
+    '#additional-content ul li {' +
+    '    width: 12.4% !important' +
+    '} ';
+
 var progress_circle_apprentice = '<div id="progress-circle" class="progress-circle progress-apprentice"></div>';
 var progress_circle_guru = '<div id="progress-circle" class="progress-circle progress-guru"></div>';
 var progress_circle_master = '<div id="progress-circle" class="progress-circle progress-master"></div>';
@@ -72,11 +79,59 @@ var progress_circle_burned_completed = '<div id="progress-circle" class="progres
 
 addStyle(css);
 
-$('#additional-content ul').append('<li><span><div id="srs-progress-wrapper"></div></span></li>');
+$('#additional-content ul').append('<li><span title="SRS level"><div id="srs-progress-wrapper"></div></span></li>');
 
+/* search bar. Not useful for this script
+$('footer').append('<div style="display: inline;" id="searchbar"> ' +
+		'<form>'+
+		'	<input id="WKRP_Search" name="search" type="search">' +
+    '	<input type="button" id="WKRP_Submit" name="submit" value="Search" >' +
+		'</form>' +
+	'</div>');
+  */
+/*
+$('WKRP_Submit').click(function(){
+    var result = $('WKRP_Search') //TODO how the fuck do i get the input???
+    console.log('########' + result);
+});
 
+*/
 // Code from Stack Overflow to detect changes in the DOM. 
 // (http://stackoverflow.com/questions/3219758/detect-changes-in-the-dom/14570614#14570614)
+$.jStorage.listenKeyChange('currentItem', function(){
+    var level = $.jStorage.get('currentItem').srs;
+   var $wrapper = $('#srs-progress-wrapper');
+   var newContent = "";
+	 if(level<5){ //Apprentice [1,4]
+       for(var i=0;i<level;i++){
+           newContent += progress_circle_apprentice_completed;
+       }
+       for(var i=0;i<(4-level);i++){
+           newContent += progress_circle_apprentice;
+       }
+       if(level === 4){
+           newContent += progress_circle_guru;
+       }
+   }else if(level < 7){ //Guru [5,6]
+      if(level === 5){
+          newContent += progress_circle_guru_completed;
+          newContent += progress_circle_guru;
+      }else{
+          newContent += progress_circle_guru_completed;
+          newContent += progress_circle_guru_completed;
+          newContent += progress_circle_master;
+      } 
+   }else if (level === 7){ //Master
+     newContent += progress_circle_master_completed;
+       newContent += progress_circle_enlightened;
+   } else if (level === 8){ //Enlightened
+     newContent += progress_circle_enlightened_completed;
+       newContent += progress_circle_burned;
+   }
+   console.log('##### srs level is ' + level);
+   $wrapper.html(newContent);
+});
+
 var observeDOM = (function(){
     var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver,
         eventListenerSupported = window.addEventListener;
@@ -101,35 +156,48 @@ var observeDOM = (function(){
 console.log('#############  halfway there');
 // Callback function observing the 'question-type' div 'h1' element
 var observeMe = $('#character')[0];
-observeDOM( observeMe ,function(){
+
+/*observeDOM( observeMe ,function(){
    var level = $.jStorage.get('currentItem').srs;
    var $wrapper = $('#srs-progress-wrapper');
    var newContent = "";
 	 if(level<5){ //Apprentice [1,4]
-       for(var i=0;i<level-1;i++){
+       for(var i=0;i<level;i++){
            newContent += progress_circle_apprentice_completed;
        }
-       for(var i=0;i<(4-(level-1));i++){
+       for(var i=0;i<(4-level);i++){
            newContent += progress_circle_apprentice;
+       }
+       if(level === 4){
+           newContent += progress_circle_guru;
        }
    }else if(level < 7){ //Guru [5,6]
       if(level === 5){
-          newContent += progress_circle_guru;
+          newContent += progress_circle_guru_completed;
           newContent += progress_circle_guru;
       }else{
           newContent += progress_circle_guru_completed;
-          newContent += progress_circle_guru;
+          newContent += progress_circle_guru_completed;
+          newContent += progress_circle_master;
       } 
    }else if (level === 7){ //Master
-     newContent += progress_circle_master;
+     newContent += progress_circle_master_completed;
+       newContent += progress_circle_enlightened;
    } else if (level === 8){ //Enlightened
-     newContent += progress_circle_enlightened;
-   } else if (level === 9){ //Burned
-     newContent += progress_circle_burned;
+     newContent += progress_circle_enlightened_completed;
+       newContent += progress_circle_burned;
    }
    console.log('##### srs level is ' + level);
    $wrapper.html(newContent);
 });
+
+*/
+
+///////// DOUBLE CHECK SCRIPT CODE
+
+if(doIUseDoubleCheckScript) {
+    addStyle(cssForDoubleCheckScript);
+}
 
 console.log(' ##########  script ended');
 
