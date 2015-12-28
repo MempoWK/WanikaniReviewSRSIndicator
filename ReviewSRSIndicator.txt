@@ -6,11 +6,11 @@
 // @run-at      document-end
 // @include     https://www.wanikani.com/review/session*
 // @include     http://www.wanikani.com/review/session*
-// @version     1.2.1
+// @version     1.3
 // @grant       none
 // ==/UserScript==
 
-console.log('start of Wanikani Review Pro');
+console.log('start of Review SRS Indicator');
 
 
 var css = 
@@ -79,22 +79,6 @@ addStyle(css);
 
 $('#additional-content ul').append('<li><span title="SRS level"><div id="srs-progress-wrapper"></div></span></li>');
 
-/* search bar. Not useful for this script
-$('footer').append('<div style="display: inline;" id="searchbar"> ' +
-		'<form>'+
-		'	<input id="WKRP_Search" name="search" type="search">' +
-    '	<input type="button" id="WKRP_Submit" name="submit" value="Search" >' +
-		'</form>' +
-	'</div>');
-  */
-/*
-$('WKRP_Submit').click(function(){
-    var result = $('WKRP_Search') //TODO how the fuck do i get the input???
-    console.log('########' + result);
-});
-
-*/
-
 //Shout-out to rfindley for the fix!
 $.jStorage.listenKeyChange('currentItem', function(){
    var level = $.jStorage.get('currentItem').srs;
@@ -130,13 +114,14 @@ $.jStorage.listenKeyChange('currentItem', function(){
    $wrapper.html(newContent);
 });
 
-
+///////// Button observer
 // select the target node
 var target = document.querySelector('#additional-content ul');
  
 // create an observer instance
 var observer = new MutationObserver(function(mutations) {
    calculateDynamicWidth();
+   fixAnswerExceptionPosition();
 });
  
 // configuration of the observer:
@@ -144,6 +129,7 @@ var config = { attributes: true, childList: true, characterData: true };
  
 // pass in the target node, as well as the observer options
 observer.observe(target, config);
+
 
 function calculateDynamicWidth(){
    var liCount = $('#additional-content ul').children().size();
@@ -154,55 +140,13 @@ function calculateDynamicWidth(){
     '#additional-content ul li {' +
     '    width: ' + percentage + '% !important' +
     '} ';
-    console.log('########### number of li children is ' + $('#additional-content ul').children().size() );
+    
 
     addStyle(cssDynamicWidth);
 }
 
-/*
-
-var observeDOM = (function(){
-    var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver,
-        eventListenerSupported = window.addEventListener;
-
-    return function(obj, callback){
-        if( MutationObserver ){
-            // define a new observer
-            var obs = new MutationObserver(function(mutations, observer){
-                if( mutations[0].addedNodes.length || mutations[0].removedNodes.length )
-                    callback();
-            });
-            // have the observer observe for changes in children
-            obs.observe( obj, { childList:true, subtree:true });
-        }
-        else if( eventListenerSupported ){
-            obj.addEventListener('DOMNodeInserted', callback, false);
-            obj.addEventListener('DOMNodeRemoved', callback, false);
-        }
-    }
-})();
-
-
-// Callback function observing the 'question-type' div 'h1' element
-var observeMe = $('#additional-content ul')[0];
-
-observeDOM( observeMe ,function(){
-   var liCount = $('#additional-content ul').children().size();
-   var percentage = 100/liCount;
-    percentage-=0.1;
-    console.log('width percentage is: ' + percentage);
-   cssDynamicWidth = 
-    '#additional-content ul li {' +
-    '    width: ' + percentage + '% !important' +
-    '} ';
-    
-    addStyle(cssDynamicWidth);
-});
-*/
-
 calculateDynamicWidth();
-console.log('########### number of li children is ' + $('#additional-content ul').children().size() );
-
+fixAnswerExceptionPosition();
 console.log(' ##########  script ended');
 
 function addStyle(aCss) {
@@ -217,3 +161,50 @@ function addStyle(aCss) {
   }
   return null;
 }
+
+function fixAnswerExceptionPosition(){
+    
+    var buttonWidthPercentage = parseFloat(window.getComputedStyle(document.querySelector('#additional-content ul li')).width);
+    var bodyWidth = parseFloat(window.getComputedStyle(document.querySelector('body')).width) - 20; //10px margin on both sides
+    var buttonWidth = bodyWidth*buttonWidthPercentage/100;
+    console.log(buttonWidthPercentage+'/'+bodyWidth+'/'+buttonWidth+'/');
+    var answerExceptionWidth = 400;
+    var newPosition = -200 +(buttonWidth/2); //padding
+
+    
+    var i = 0;
+    var positionInList = -1;
+    console.log('####inside fixanswer');
+    for(i=0;i<$('#additional-content ul').children().size()-1;i++){
+        if($('#additional-content ul').children()[i].id === "option-item-info"){
+            positionInList = i;
+            console.log('positioninlist is: ' + positionInList);
+        }
+    }
+    
+    if(positionInList !== -1){        
+        newPosition+=(positionInList*buttonWidth);
+        console.log('##### new position is: ' + newPosition);
+    }else{
+        console.log('##### Whoops, where did #option-item-info go?');
+        return;
+    }
+    
+    
+    var cssAnswerException = 
+    '#additional-content #answer-exception {' +
+    '    width: 400px !important;' +
+    '    left: ' + newPosition + 'px !important;' + 
+    '}    ' +
+    '#answer-exception span::before {' +
+    '    left: 50% !important;' + 
+    '}    ' +
+    '#additional-content #answer-exception span {' +
+    '    width: inherit !important;' +
+    '}    ';
+    
+    console.log('@@@@@@@@@@@@@@@');
+    addStyle(cssAnswerException);
+    
+}
+
