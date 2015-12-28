@@ -1,0 +1,148 @@
+// ==UserScript==
+// @name        Wanikani Review Pro
+// @namespace   mempo
+// @author      Mempo
+// @description An enhancement to reviews
+// @run-at      document-end
+// @include     https://www.wanikani.com/review/session*
+// @include     http://www.wanikani.com/review/session*
+// @version     1
+// @grant       none
+// ==/UserScript==
+
+console.log('start of Wanikani Review Pro');
+
+var css = 
+    '#additional-content ul li {' +
+    '    width: 14.2% !important' +
+    '}                          ' +
+    '.progress-circle {' +
+    '    display: inline-block;     ' +
+    '    width: 10px;  ' +
+    '    height: 10px; ' +
+    '    background-color: transparent;' +
+    '    border: 5px solid transparent;' +
+    '    border-radius: 50%; ' +
+    '    margin: 0 2px; ' +
+    '}                      ' +
+    '.progress-apprentice { ' +
+    '    border-color: #DD0093;' +
+    '} ' +
+    '.progress-guru { ' +
+    '    border-color: #882D9E;' +
+    '} ' +
+    '.progress-master { ' +
+    '    border-color: #294DDB;' +
+    '} ' +
+    '.progress-enlightened { ' +
+    '    border-color: #0093DD;' +
+    '} ' +
+    '.progress-burned { ' +
+    '    border-color: #434343;' +
+    '} ' +
+    //COMPLETED CIRCLES
+    '.progress-apprentice-complete { ' +
+    '    background-color: #DD0093;' +
+    '} ' +
+    '.progress-guru-complete { ' +
+    '    background-color: #882D9E;' +
+    '} ' +
+    '.progress-master-complete { ' +
+    '    background-color: #294DDB;' +
+    '} ' +
+    '.progress-enlightened-complete { ' +
+    '    background-color: #0093DD;' +
+    '} ' +
+    '.progress-burned-complete { ' +
+    '    background-color: #434343;' +
+    '} ';
+
+var progress_circle_apprentice = '<div id="progress-circle" class="progress-circle progress-apprentice"></div>';
+var progress_circle_guru = '<div id="progress-circle" class="progress-circle progress-guru"></div>';
+var progress_circle_master = '<div id="progress-circle" class="progress-circle progress-master"></div>';
+var progress_circle_enlightened = '<div id="progress-circle" class="progress-circle progress-enlightened"></div>';
+var progress_circle_burned = '<div id="progress-circle" class="progress-circle progress-burned"></div>';
+
+//TODO: class names here
+var progress_circle_apprentice_completed = '<div id="progress-circle" class="progress-circle  progress-apprentice progress-apprentice-complete"></div>';
+var progress_circle_guru_completed = '<div id="progress-circle" class="progress-circle progress-guru progress-guru-complete"></div>';
+var progress_circle_master_completed= '<div id="progress-circle" class="progress-circle progress-master progress-master-complete"></div>';
+var progress_circle_enlightened_completed = '<div id="progress-circle" class="progress-circle progress-enlightened progress-enlightened-complete"></div>';
+var progress_circle_burned_completed = '<div id="progress-circle" class="progress-circle progress-burned progress-burned-complete"></div>';
+
+addStyle(css);
+
+$('#additional-content ul').append('<li><span><div id="srs-progress-wrapper"></div></span></li>');
+
+
+// Code from Stack Overflow to detect changes in the DOM. 
+// (http://stackoverflow.com/questions/3219758/detect-changes-in-the-dom/14570614#14570614)
+var observeDOM = (function(){
+    var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver,
+        eventListenerSupported = window.addEventListener;
+
+    return function(obj, callback){
+        if( MutationObserver ){
+            // define a new observer
+            var obs = new MutationObserver(function(mutations, observer){
+                if( mutations[0].addedNodes.length || mutations[0].removedNodes.length )
+                    callback();
+            });
+            // have the observer observe for changes in children
+            obs.observe( obj, { childList:true, subtree:true });
+        }
+        else if( eventListenerSupported ){
+            obj.addEventListener('DOMNodeInserted', callback, false);
+            obj.addEventListener('DOMNodeRemoved', callback, false);
+        }
+    }
+})();
+
+console.log('#############  halfway there');
+// Callback function observing the 'question-type' div 'h1' element
+var observeMe = $('#character')[0];
+observeDOM( observeMe ,function(){
+   var level = $.jStorage.get('currentItem').srs;
+   var $wrapper = $('#srs-progress-wrapper');
+   var newContent = "";
+	 if(level<5){ //Apprentice [1,4]
+       for(var i=0;i<level-1;i++){
+           newContent += progress_circle_apprentice_completed;
+       }
+       for(var i=0;i<(4-(level-1));i++){
+           newContent += progress_circle_apprentice;
+       }
+   }else if(level < 7){ //Guru [5,6]
+      if(level === 5){
+          newContent += progress_circle_guru;
+          newContent += progress_circle_guru;
+      }else{
+          newContent += progress_circle_guru_completed;
+          newContent += progress_circle_guru;
+      } 
+   }else if (level === 7){ //Master
+     newContent += progress_circle_master;
+   } else if (level === 8){ //Enlightened
+     newContent += progress_circle_enlightened;
+   } else if (level === 9){ //Burned
+     newContent += progress_circle_burned;
+   }
+   console.log('##### srs level is ' + level);
+   $wrapper.html(newContent);
+});
+
+console.log(' ##########  script ended');
+
+function addStyle(aCss) {
+  var head, style;
+  head = document.getElementsByTagName('head')[0];
+  if (head) {
+    style = document.createElement('style');
+    style.setAttribute('type', 'text/css');
+    style.textContent = aCss;
+    head.appendChild(style);
+    return style;
+  }
+  return null;
+}
+
