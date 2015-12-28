@@ -6,17 +6,16 @@
 // @run-at      document-end
 // @include     https://www.wanikani.com/review/session*
 // @include     http://www.wanikani.com/review/session*
-// @version     1.1.2
+// @version     1.2.1
 // @grant       none
 // ==/UserScript==
 
 console.log('start of Wanikani Review Pro');
 
-var doIUseDoubleCheckScript = false;
 
 var css = 
     '#additional-content ul li {' +
-    '    width: 14.2% !important' +
+    '    width: 16.5% !important' +
     '}                          ' +
     '.progress-circle {' +
     '    display: inline-block;     ' +
@@ -59,7 +58,7 @@ var css =
     '    background-color: #434343;' +
     '} ';
 
-var cssForDoubleCheckScript = 
+var cssDynamicWidth = 
     '#additional-content ul li {' +
     '    width: 12.4% !important' +
     '} ';
@@ -70,7 +69,6 @@ var progress_circle_master = '<div id="progress-circle" class="progress-circle p
 var progress_circle_enlightened = '<div id="progress-circle" class="progress-circle progress-enlightened"></div>';
 var progress_circle_burned = '<div id="progress-circle" class="progress-circle progress-burned"></div>';
 
-//TODO: class names here
 var progress_circle_apprentice_completed = '<div id="progress-circle" class="progress-circle  progress-apprentice progress-apprentice-complete"></div>';
 var progress_circle_guru_completed = '<div id="progress-circle" class="progress-circle progress-guru progress-guru-complete"></div>';
 var progress_circle_master_completed= '<div id="progress-circle" class="progress-circle progress-master progress-master-complete"></div>';
@@ -96,10 +94,10 @@ $('WKRP_Submit').click(function(){
 });
 
 */
-// Code from Stack Overflow to detect changes in the DOM. 
-// (http://stackoverflow.com/questions/3219758/detect-changes-in-the-dom/14570614#14570614)
+
+//Shout-out to rfindley for the fix!
 $.jStorage.listenKeyChange('currentItem', function(){
-    var level = $.jStorage.get('currentItem').srs;
+   var level = $.jStorage.get('currentItem').srs;
    var $wrapper = $('#srs-progress-wrapper');
    var newContent = "";
 	 if(level<5){ //Apprentice [1,4]
@@ -109,7 +107,7 @@ $.jStorage.listenKeyChange('currentItem', function(){
        for(var i=0;i<(4-level);i++){
            newContent += progress_circle_apprentice;
        }
-       if(level === 4){
+       if(level === 4){//YAY, about to level up!
            newContent += progress_circle_guru;
        }
    }else if(level < 7){ //Guru [5,6]
@@ -131,6 +129,37 @@ $.jStorage.listenKeyChange('currentItem', function(){
    console.log('##### srs level is ' + level);
    $wrapper.html(newContent);
 });
+
+
+// select the target node
+var target = document.querySelector('#additional-content ul');
+ 
+// create an observer instance
+var observer = new MutationObserver(function(mutations) {
+   calculateDynamicWidth();
+});
+ 
+// configuration of the observer:
+var config = { attributes: true, childList: true, characterData: true };
+ 
+// pass in the target node, as well as the observer options
+observer.observe(target, config);
+
+function calculateDynamicWidth(){
+   var liCount = $('#additional-content ul').children().size();
+   var percentage = 100/liCount;
+    percentage-=0.1;
+    console.log('width percentage is: ' + percentage);
+   cssDynamicWidth = 
+    '#additional-content ul li {' +
+    '    width: ' + percentage + '% !important' +
+    '} ';
+    console.log('########### number of li children is ' + $('#additional-content ul').children().size() );
+
+    addStyle(cssDynamicWidth);
+}
+
+/*
 
 var observeDOM = (function(){
     var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver,
@@ -153,51 +182,26 @@ var observeDOM = (function(){
     }
 })();
 
-console.log('#############  halfway there');
+
 // Callback function observing the 'question-type' div 'h1' element
-var observeMe = $('#character')[0];
+var observeMe = $('#additional-content ul')[0];
 
-/*observeDOM( observeMe ,function(){
-   var level = $.jStorage.get('currentItem').srs;
-   var $wrapper = $('#srs-progress-wrapper');
-   var newContent = "";
-	 if(level<5){ //Apprentice [1,4]
-       for(var i=0;i<level;i++){
-           newContent += progress_circle_apprentice_completed;
-       }
-       for(var i=0;i<(4-level);i++){
-           newContent += progress_circle_apprentice;
-       }
-       if(level === 4){
-           newContent += progress_circle_guru;
-       }
-   }else if(level < 7){ //Guru [5,6]
-      if(level === 5){
-          newContent += progress_circle_guru_completed;
-          newContent += progress_circle_guru;
-      }else{
-          newContent += progress_circle_guru_completed;
-          newContent += progress_circle_guru_completed;
-          newContent += progress_circle_master;
-      } 
-   }else if (level === 7){ //Master
-     newContent += progress_circle_master_completed;
-       newContent += progress_circle_enlightened;
-   } else if (level === 8){ //Enlightened
-     newContent += progress_circle_enlightened_completed;
-       newContent += progress_circle_burned;
-   }
-   console.log('##### srs level is ' + level);
-   $wrapper.html(newContent);
+observeDOM( observeMe ,function(){
+   var liCount = $('#additional-content ul').children().size();
+   var percentage = 100/liCount;
+    percentage-=0.1;
+    console.log('width percentage is: ' + percentage);
+   cssDynamicWidth = 
+    '#additional-content ul li {' +
+    '    width: ' + percentage + '% !important' +
+    '} ';
+    
+    addStyle(cssDynamicWidth);
 });
-
 */
 
-///////// DOUBLE CHECK SCRIPT CODE
-
-if(doIUseDoubleCheckScript) {
-    addStyle(cssForDoubleCheckScript);
-}
+calculateDynamicWidth();
+console.log('########### number of li children is ' + $('#additional-content ul').children().size() );
 
 console.log(' ##########  script ended');
 
@@ -213,4 +217,3 @@ function addStyle(aCss) {
   }
   return null;
 }
-
